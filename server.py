@@ -23,6 +23,7 @@ import time
 from mako.template import Template
 from mako.lookup import TemplateLookup
 
+cloudant_url = None
 
 class PersonalityInsightsService:
     """Wrapper on the Personality Insights service"""
@@ -51,6 +52,19 @@ class PersonalityInsightsService:
                 self.password = svc["password"]
             else:
                 print("ERROR: The Personality Insights service was not found")
+            
+            # Get cloudant info from service binding
+            if 'cloudantNoSQLDB' in services:
+                print("Cloundant service found!")
+                global cloudant_url
+                cloudant_url = services['cloudantNoSQLDB'][0]['credentials']['url']
+                try:
+                   requests.put(cloudant_url + '/demo-db')
+                   print("Created database demo-db")
+                except Exception as e:
+                   print("Caught exception while creating database: " + str(e))
+            else:
+                print("Cloundant service was not found")
 
     def getProfile(self, text):
         """Returns the profile by doing a POST to /v2/profile with text"""
@@ -100,10 +114,14 @@ class DemoService(object):
         """
         try:
 	    # Time the call to the PI service
-            #start = time.time()
+            start = time.time()
             profileJson = self.service.getProfile(text)
-            #duration = int((time.time()-start)*1000)
- 	    #print "Watson PI API call took:{0} ms".format(duration)
+            duration = int((time.time()-start)*1000)
+            print "Watson PI API call took:{0} ms".format(duration)
+            # Dump json response in cloudant
+            global cloudant_url
+            if cloudant_url:
+                requests.post(cloudant_url + '/demo-db', json=profileJson)
             return json.dumps(profileJson)
         except Exception as e:
             print "ERROR: %s" % e

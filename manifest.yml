@@ -5,9 +5,10 @@ declared-services:
     plan: tiered
 
 applications:
-- name: personality-insights-python-priya-demo
+- name: personality-insights-python-ak
   command: python server.py
   path: .
   memory: 256M
   services:
-  - personality_insights_priya
+  - personality_insights_ak
+  - cloudant_ak
